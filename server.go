@@ -14,10 +14,9 @@ type Credential struct {
 	Code string `json:"Code"`
 }
 
-var credentialsArr [3]string
-
 const filePath string = "whitelist.data"
 
+//home endpoint
 func home(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello there"))
 
@@ -30,18 +29,21 @@ func home(w http.ResponseWriter, r *http.Request) {
 }
 
 //send device id to get information if it is allow to send data
+//add new device to whitelist
 func credentials(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		id := r.URL.Query().Get("id")
 
 		var allow string = "no"
 
+		//read file which contains all allowed devices ids
 		file, err := os.Open(filePath)
 		if err != nil {
 			log.Panic(err)
 		}
 
 		defer file.Close()
+		//search for matching id in file with given from request
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
 			text := scanner.Text()
@@ -49,6 +51,12 @@ func credentials(w http.ResponseWriter, r *http.Request) {
 				allow = "yes"
 				break
 			}
+		}
+
+		if allow == "yes" {
+			w.WriteHeader(http.StatusAccepted)
+		} else {
+			w.WriteHeader(http.StatusForbidden)
 		}
 		w.Write([]byte(allow))
 	}
@@ -60,6 +68,7 @@ func credentials(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "POST" {
+		//MAPING DATA FROM REQ.BODY TO STRUCT
 		var credential Credential
 		bodyBytes, err := io.ReadAll(r.Body)
 		json.Unmarshal([]byte(bodyBytes), &credential)
@@ -69,15 +78,14 @@ func credentials(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 
 		}
+		//SAVE TO DATA FILE
 		file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			w.WriteHeader(http.StatusConflict)
 			panic(err)
 		}
-
+		//CONCAT 2 STRINGS
 		str := fmt.Sprint(credential.Code, "\n")
-		fmt.Printf(str)
-		fmt.Printf(str)
 		if _, err := file.WriteString(str); err != nil {
 			w.WriteHeader(http.StatusConflict)
 			panic(err)
@@ -90,11 +98,12 @@ func credentials(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
-	credentialsArr = [...]string{"0001", "0002", "0003"}
+	//API ENDPOINTS:
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", home)
 	mux.HandleFunc("/whitelist", credentials)
 
+	//RUNMING SERVER
 	log.Println("Starting server on :4000")
 	err := http.ListenAndServe(":4000", mux)
 	log.Fatal(err)
