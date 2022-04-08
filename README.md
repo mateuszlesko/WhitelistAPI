@@ -1,3 +1,3 @@
-# Credential API:
+# Whitelist API:
 
-The purpose of this API is getting access to the credential of IoT devices, that can send data to the main API.
+The purpose of this API is to check if IoT device that want send data do main API has right to do it.
