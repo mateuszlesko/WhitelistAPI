@@ -5,6 +5,8 @@ import (
 	"net/http"
 )
 
+var credentialsArr [3]string
+
 func home(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello there"))
 
@@ -20,8 +22,15 @@ func home(w http.ResponseWriter, r *http.Request) {
 func isAllowTo(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		id := r.URL.Query().Get("id")
+		present := "no"
+		for _, x := range credentialsArr {
+			if x == id {
+				present = "yes"
+				break
+			}
+		}
 
-		w.Write([]byte(id))
+		w.Write([]byte(present))
 		return
 	}
 	if r.Method == "POST" {
@@ -32,6 +41,8 @@ func isAllowTo(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
+	credentialsArr = [...]string{"0001", "0002", "0003"}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", home)
 	mux.HandleFunc("/isallowto", isAllowTo)
